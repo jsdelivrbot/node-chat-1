@@ -1,0 +1,105 @@
+<!doctype html>
+<html>
+  <head>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="//code.jquery.com/jquery-1.11.1.js"></script>
+<script>
+var localUser = "";
+
+function Users() {
+  this.users = [];
+}
+Users.prototype = {
+  addUser: function (user) {
+    this.users.push(user);
+  },
+  removeUser: function (userName) {
+    //Remove tank object
+    this.users = this.users.filter(function (t) {
+      return t.name != userName
+    });
+    //remove tank from dom
+    //$('#' + tankId).remove();
+    //$('#info-' + tankId).remove();
+  },
+}
+var chat = new Users();
+$(function () {
+  var socket = io();
+  $(window).on('beforeunload', function () {
+    socket.emit('leave', localUser);
+  });
+  $('form').submit(function () {
+    if (localUser != '' && $('#m').val() != '') {
+      socket.emit('chat message', $('#m').val(), localUser);
+    }
+    $('#m').val('');
+    return false;
+  });
+  $('#join').click(function () {
+    userName = $('#user-name').val();
+
+    joinChat(userName, socket);
+    localUser = userName;
+  });
+  socket.on('removeUser', function (userName) {
+    chat.removeUser(userName);
+    $('#'+userName).remove();
+
+  });
+  socket.on('addUser', function (user) {
+    chat.addUser(user.id, user.name);
+    $('#users').append('<li id='+ user.name+'>'+user.id + ", " + user.name+'</li>')
+  });
+  socket.on('chat message', function (msg) {
+    $('#messages').append($('<li>').html(msg));
+    window.scrollTo(0, document.body.scrollHeight);
+  });
+});
+
+function joinChat(userName, socket) {
+  if (userName != '') {
+    $('.join').fadeOut("slow");
+    socket.emit('join', {
+      name: userName
+    });
+  }
+}
+
+</script>
+    <title>Socket.IO chat</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font: 13px Helvetica, Arial; }
+      form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
+      form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
+      form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+      #users,#messages { list-style-type: none; margin: 0; padding: 0; }
+      #messages li { padding: 5px 10px; }
+      #messages li:nth-child(odd) { background: #eee; }
+      .chat-wrap{width:75%; float:left;display:table}
+      .user-list{width:25%; float:left; display:table}
+      .join{    position: fixed;background: rgba(31, 15, 43, 0.88);width: 80%;height: 80%;z-index: 100;top: 10%;left: 10%;}
+    </style>
+  </head>
+  <body>
+    <div class="join">
+      <div style="position: relative;margin: 20% auto;width: 20%;">
+      <h3 style="color:White">Podaj nazwę</h3>
+        <input id="user-name" autocomplete="off" /><button id="join">Send</button>
+      </div>
+    </div>
+  <div class="chat-wrap">
+    <ul id="messages"><li></li></ul>
+    <form action="">
+      <input id="m" autocomplete="off" /><button>Send</button>
+    </form>
+  </div>
+  <div class="user-list">
+    <h2>Lista userow</h2>
+    <ul id="users">
+<li></li>
+    </ul>
+  </div>
+  </body>
+</html>
