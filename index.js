@@ -54,6 +54,6 @@ io.on('connection', function (client) {
       io.emit('chat message', userName + ":  " + msg);
   });
 });
-http.listen(80, function () {
+http.listen(8081, function () {
   console.log('listening on *:3000');
 });
